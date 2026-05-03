@@ -4,10 +4,26 @@ const {
   EmbedBuilder
 } = require("discord.js");
 
+const express = require("express");
+const app = express();
+
+// 🔑 ENV
 const token = process.env.TOKEN;
 const muteRoleId = process.env.MUTE_ROLE_ID;
 const logChannelId = process.env.LOG_CHANNEL_ID;
 
+// 🌐 Web Server (สำคัญสำหรับ Render)
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+  res.send("🤖 Bot is running!");
+});
+
+app.listen(PORT, () => {
+  console.log("🌐 Web server running on port " + PORT);
+});
+
+// 🤖 Discord Client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -17,12 +33,14 @@ const client = new Client({
   ]
 });
 
+// 📊 เก็บข้อความ
 const userMessages = new Map();
 
 const LIMIT = 5;
 const TIME = 5000;
 const DUPLICATE_LIMIT = 3;
 
+// 📩 ตรวจสแปม
 client.on("messageCreate", async (message) => {
   if (!message.guild || message.author.bot) return;
 
@@ -53,6 +71,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
+// ⚠️ ลงโทษ
 async function punish(message, reason) {
   try {
     const member = message.member;
@@ -64,7 +83,9 @@ async function punish(message, reason) {
     await channel.bulkDelete(userMsgs, true);
 
     // ❌ ลบ role ทั้งหมด (ยกเว้น @everyone)
-    const rolesToRemove = member.roles.cache.filter(role => role.id !== message.guild.id);
+    const rolesToRemove = member.roles.cache.filter(
+      role => role.id !== message.guild.id
+    );
     for (const role of rolesToRemove.values()) {
       await member.roles.remove(role).catch(() => {});
     }
@@ -72,7 +93,7 @@ async function punish(message, reason) {
     // 🔒 ใส่ยศกักบริเวณ
     await member.roles.add(muteRoleId);
 
-    // 📢 Embed แจ้งเตือน
+    // 📢 แจ้งเตือน
     const embed = new EmbedBuilder()
       .setColor("#ff0000")
       .setTitle("🚫 ระบบป้องกันสแปม")
@@ -80,7 +101,7 @@ async function punish(message, reason) {
       .addFields(
         { name: "📌 เหตุผล", value: reason, inline: true },
         { name: "👤 ผู้ใช้", value: member.user.tag, inline: true },
-        { name: "🆔 ID", value: member.id, inline: false }
+        { name: "🆔 ID", value: member.id }
       )
       .setFooter({ text: "Server Security System" })
       .setTimestamp();
@@ -96,8 +117,8 @@ async function punish(message, reason) {
       .addFields(
         { name: "👤 ผู้ใช้", value: member.user.tag, inline: true },
         { name: "🆔 ID", value: member.id, inline: true },
-        { name: "📌 เหตุผล", value: reason, inline: false },
-        { name: "📍 ห้อง", value: channel.name, inline: false }
+        { name: "📌 เหตุผล", value: reason },
+        { name: "📍 ห้อง", value: channel.name }
       )
       .setFooter({ text: "Anti-Spam Log" })
       .setTimestamp();
@@ -111,4 +132,5 @@ async function punish(message, reason) {
   }
 }
 
+// 🚀 เริ่มบอท
 client.login(token);
