@@ -4,8 +4,9 @@ const {
   EmbedBuilder
 } = require("discord.js");
 
-const { muteRoleId, logChannelId } = require("./config.json");
 const token = process.env.TOKEN;
+const muteRoleId = process.env.MUTE_ROLE_ID;
+const logChannelId = process.env.LOG_CHANNEL_ID;
 
 const client = new Client({
   intents: [
